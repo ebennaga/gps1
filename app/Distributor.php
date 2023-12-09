@@ -31,6 +31,11 @@ class Distributor extends Model
         return $this->belongsToMany(User::class);
     }
 
+    // public function distirbutor_user()
+    // {
+    //     // return $this->hasMany();
+    // }
+
     public function roles ()
     {
         return $this->belongsToMany(Role::class);

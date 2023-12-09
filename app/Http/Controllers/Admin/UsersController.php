@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\EmailUser;
@@ -21,7 +22,7 @@ use Session;
 
 class UsersController extends Controller
 {
-    public function index (Request $request)
+    public function index(Request $request)
     {
         if ($request->ajax()) {
 
@@ -31,73 +32,91 @@ class UsersController extends Controller
             $table = Datatables::of($query);
             $table->addColumn('placeholder', '&nbsp;');
             $table->addColumn('actions', '&nbsp;');
-            $table->editColumn('actions', function ($row) {
-                $viewGate      = 'user_show';
-                $editGate      = 'user_edit';
-                $deleteGate    = 'user_delete';
-                $crudRoutePart = 'users';
-                return view('partials.datatablesActions', compact(
-                        'viewGate',
-                        'editGate',
-                        'deleteGate',
-                        'crudRoutePart',
-                        'row'
-                    )
-                );
-            }
-            );
-            $table->editColumn('id', function ($row) {
-                return $row->id ? $row->id : "";
-            }
-            );
-            $table->editColumn('name', function ($row) {
-                return $row->name ? $row->name : "";
-            }
-            );
-            $table->editColumn('username', function ($row) {
-                return $row->username ? $row->username : "";
-            }
-            );
-            $table->editColumn('roles', function ($row) {
-                $labels = [];
-                foreach ($row->roles as $role) {
-                    $labels[] = sprintf('<span class="label label-info label-many">%s</span>', $role->title);
+            $table->editColumn(
+                'actions',
+                function ($row) {
+                    $viewGate      = 'user_show';
+                    $editGate      = 'user_edit';
+                    $deleteGate    = 'user_delete';
+                    $crudRoutePart = 'users';
+                    return view(
+                        'partials.datatablesActions',
+                        compact(
+                            'viewGate',
+                            'editGate',
+                            'deleteGate',
+                            'crudRoutePart',
+                            'row'
+                        )
+                    );
                 }
-                return implode(', ', $labels);
-            }
             );
-            $table->editColumn('email', function ($row) {
-                $labels = [];
-                foreach ($row->email as $email) {
-                    $labels[] = $email->email;
+            $table->editColumn(
+                'id',
+                function ($row) {
+                    return $row->id ? $row->id : "";
                 }
-                return implode(', ', $labels);
-            }
             );
-            $table->editColumn('terminal', function ($row) {
-                $labels = [];
-                foreach ($row->terminals as $terminal) {
-                    $labels[] = sprintf('<span class="label label-info label-many">%s</span>', $terminal->name);
+            $table->editColumn(
+                'name',
+                function ($row) {
+                    return $row->name ? $row->name : "";
                 }
-                return implode(' ', $labels);
-            }
+            );
+            $table->editColumn(
+                'username',
+                function ($row) {
+                    return $row->username ? $row->username : "";
+                }
+            );
+            $table->editColumn(
+                'roles',
+                function ($row) {
+                    $labels = [];
+                    foreach ($row->roles as $role) {
+                        $labels[] = sprintf('<span class="label label-info label-many">%s</span>', $role->title);
+                    }
+                    return implode(', ', $labels);
+                }
+            );
+            $table->editColumn(
+                'email',
+                function ($row) {
+                    $labels = [];
+                    foreach ($row->email as $email) {
+                        $labels[] = $email->email;
+                    }
+                    return implode(', ', $labels);
+                }
+            );
+            $table->editColumn(
+                'terminal',
+                function ($row) {
+                    $labels = [];
+                    foreach ($row->terminals as $terminal) {
+                        $labels[] = sprintf('<span class="label label-info label-many">%s</span>', $terminal->name);
+                    }
+                    return implode(' ', $labels);
+                }
             );
             //$table->editColumn('ship', function ($row) {
-                //$labels = [];
-                //foreach ($row->ships as $ship) {
-                    //$labels[] = sprintf($ship->name);
-                //}
-                //return implode(' ', $labels);
+            //$labels = [];
+            //foreach ($row->ships as $ship) {
+            //$labels[] = sprintf($ship->name);
+            //}
+            //return implode(' ', $labels);
             //}
             //);
-            $table->editColumn('ship_id', function ($row) {
-                $labels = [];
-                foreach ($row->ships as $ship) {
-                    $labels[] = sprintf($ship->ship_ids, $ship->name);
-                    $labels[] = sprintf('- %s', $ship->name);
+            $table->editColumn(
+                'ship_id',
+                function ($row) {
+                    $labels = [];
+                    foreach ($row->ships as $ship) {
+                        $labels[] = sprintf($ship->ship_ids, $ship->name);
+                        $labels[] = sprintf('- %s', $ship->name);
+                    }
+                    return implode(' ', $labels);
                 }
-                return implode(' ', $labels);
-            }
             );
             $table->rawColumns(['actions', 'placeholder', 'roles', 'terminal']);
             return $table->make(true);
@@ -105,7 +124,7 @@ class UsersController extends Controller
         return view('admin.users.index');
     }
 
-    public function create ()
+    public function create()
     {
         abort_if(Gate::denies('user_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $roles     = Role::whereNotIn('id', [1,2,4])->get()->pluck('title', 'id');
@@ -114,26 +133,26 @@ class UsersController extends Controller
         $userauth = auth()->user();
         $rolesauth = $userauth->roles->pluck('id')->toArray();
 
-        if(in_array(1, $rolesauth, false)){
+        if(in_array(1, $rolesauth, false)) {
             $ships = Ship::all();
             //as admin
 
-         }elseif (in_array(4, $rolesauth, false)) {
+        } elseif (in_array(4, $rolesauth, false)) {
 
-            $distributor = Distributor::where('distributor_id',$userauth->id)->first();
+            $distributor = Distributor::where('distributor_id', $userauth->id)->first();
             $ships = $distributor->distributor->ships;
             // $distributor->users()->sync($user->id);
 
-         }
-//        $terminals = Terminal::whereNotIn('id',function($query) {
-//
-//            $query->select('terminal_id')->from('terminal_user');
-//
-//        })->get()->pluck('name', 'id');
+        }
+        //        $terminals = Terminal::whereNotIn('id',function($query) {
+        //
+        //            $query->select('terminal_id')->from('terminal_user');
+        //
+        //        })->get()->pluck('name', 'id');
         return view('admin.users.create', compact('roles', 'terminals', 'ships'));
     }
 
-    public function store (StoreUserRequest $request)
+    public function store(StoreUserRequest $request)
     {
         $user = User::create($request->all());
         if ($request->email) {
@@ -153,27 +172,26 @@ class UsersController extends Controller
         $userauth = auth()->user();
         $rolesauth = $userauth->roles->pluck('id')->toArray();
 
-        if(in_array(1, $rolesauth, false)){
+        if(in_array(1, $rolesauth, false)) {
             //as admin
 
-         }elseif (in_array(4, $rolesauth, false)) {
+        } elseif (in_array(4, $rolesauth, false)) {
 
-            $distributor = Distributor::where('distributor_id',$userauth->id)->first();
-            $distributor->users()->sync($user->id);
-
-         }
+            $distributor = Distributor::where('distributor_id', $userauth->id)->first();
+            $distributor->users()->attach($user->id);
+        }
 
         return redirect()->route('admin.users.index');
     }
 
-    public function edit (User $user)
+    public function edit(User $user)
     {
         abort_if(Gate::denies('user_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $roles     = Role::where('id', '!=', 2)->where('id', '!=', 1)->get()->pluck('title', 'id');
 
-//        $terminals = Terminal::whereNotIn('id',function($query) use ($user){
-//            $query->select('terminal_id')->from('terminal_user')->where('user_id', '!=',$user->id);
-//        })->get()->pluck('name', 'id');
+        //        $terminals = Terminal::whereNotIn('id',function($query) use ($user){
+        //            $query->select('terminal_id')->from('terminal_user')->where('user_id', '!=',$user->id);
+        //        })->get()->pluck('name', 'id');
         $terminals = Terminal::all()->pluck('name', 'id');
         $ships = Ship::all();
 
@@ -181,7 +199,7 @@ class UsersController extends Controller
         return view('admin.users.edit', compact('roles', 'user', 'terminals', 'ships'));
     }
 
-    public function update (UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
         $user->update($request->all());
         $user->roles()->sync($request->input('roles', []));
@@ -190,32 +208,32 @@ class UsersController extends Controller
         if ($request->email) {
             EmailUser::where('user_id', $user->id)->delete();
             foreach ($request->email as $email) {
-              if($email) {
-                $emailUser          = new EmailUser();
-                $emailUser->email   = $email;
-                $emailUser->user_id = $user->id;
-                $emailUser->save();
-              }
+                if($email) {
+                    $emailUser          = new EmailUser();
+                    $emailUser->email   = $email;
+                    $emailUser->user_id = $user->id;
+                    $emailUser->save();
+                }
             }
         }
         return redirect()->route('admin.users.index');
     }
 
-    public function show (User $user)
+    public function show(User $user)
     {
         abort_if(Gate::denies('user_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $user->load('roles', 'email', 'terminals', 'managerManagers', 'userManagers', 'ships');
         return view('admin.users.show', compact('user'));
     }
 
-    public function destroy (User $user)
+    public function destroy(User $user)
     {
         abort_if(Gate::denies('user_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $user->delete();
         return back();
     }
 
-    public function massDestroy (MassDestroyUserRequest $request)
+    public function massDestroy(MassDestroyUserRequest $request)
     {
         User::whereIn('id', request('ids'))->delete();
         return response(null, Response::HTTP_NO_CONTENT);
@@ -224,7 +242,7 @@ class UsersController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function changePassword ()
+    public function changePassword()
     {
         $user = Auth::user();
         return view('admin.users.change-password', compact('user'));
@@ -233,9 +251,11 @@ class UsersController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function storePassword (Request $request)
+    public function storePassword(Request $request)
     {
-        $this->validate($request, [
+        $this->validate(
+            $request,
+            [
                 'old_password' => 'required|check_password',
                 'password' => 'required|min:6|confirmed',
             ]
@@ -248,7 +268,7 @@ class UsersController extends Controller
         return back();
     }
 
-    public function changeTimeZone ()
+    public function changeTimeZone()
     {
         $user = Auth::user();
         return view('admin.users.change-timezone', compact('user'));
@@ -257,7 +277,7 @@ class UsersController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function storeTimeZone (Request $request)
+    public function storeTimeZone(Request $request)
     {
         $user = Auth::user();
         $timezone = $request->get('timezone');
@@ -272,23 +292,33 @@ class UsersController extends Controller
         $userauth = auth()->user();
         $rolesauth = $userauth->roles->pluck('id')->toArray();
 
-        if(in_array(1, $rolesauth, false)){
+        if(in_array(1, $rolesauth, false)) {
 
-           return User::with(['roles', 'email', 'terminals', 'ships'])
-        ->join('role_user', 'users.id', '=', 'role_user.user_id')
-        ->where('role_user.role_id', 3)
-        ->select(sprintf('%s.*', (new User)->table));
+            $userId= [];
 
-        }elseif (in_array(4, $rolesauth, false)) {
+            $distributor = Distributor::all();
+            foreach ($distributor as $item) {
+                $userId = [...$userId, ...$item->users->pluck('id')];
+            }
+            // $usersid = $distributor->users->pluck('id');
 
-        $distributor = Distributor::where('distributor_id',$userauth->id)->first();
-        $usersid = $distributor->users->pluck('id');
 
             return User::with(['roles', 'email', 'terminals', 'ships'])
         ->join('role_user', 'users.id', '=', 'role_user.user_id')
         ->where('role_user.role_id', 3)
-        ->whereIn('id',$usersid)
-        ->select(sprintf('%s.*', (new User)->table));
+        ->whereNotIn('id', $userId)
+        ->select(sprintf('%s.*', (new User())->table));
+
+        } elseif (in_array(4, $rolesauth, false)) {
+
+            $distributor = Distributor::where('distributor_id', $userauth->id)->first();
+            $usersid = $distributor->users->pluck('id');
+
+            return User::with(['roles', 'email', 'terminals', 'ships'])
+        ->join('role_user', 'users.id', '=', 'role_user.user_id')
+        ->where('role_user.role_id', 3)
+        ->whereIn('id', $usersid)
+        ->select(sprintf('%s.*', (new User())->table));
 
         }
     }

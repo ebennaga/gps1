@@ -87,7 +87,17 @@ class ManagerController extends Controller
 
             if(in_array(1, $rolesauth, false)){
 
-                $users = User::join('role_user', 'users.id', '=', 'role_user.user_id')->where('role_user.role_id', 3)->get()->pluck('name', 'id');
+                $userId= [];
+
+                $distributor = Distributor::all();
+                foreach ($distributor as $key => $item) {
+                    $userId = [...$userId, ...$item->users->pluck('id')];
+                }
+
+                $users = User::join('role_user', 'users.id', '=', 'role_user.user_id')
+                        ->where('role_user.role_id', 3)
+                        ->whereNotIn('id',$userId)
+                        ->get()->pluck('name', 'id');
                 // return Manager::with([ 'manager', 'users' ])->select(sprintf('%s.*', (new Manager)->table));
 
             }elseif (in_array(4, $rolesauth, false)) {
@@ -123,7 +133,7 @@ class ManagerController extends Controller
         }elseif (in_array(4, $rolesauth, false)) {
 
           $distributor = Distributor::where('distributor_id',$userauth->id)->first();
-          $distributor->managers()->sync($manager->id);
+          $distributor->managers()->attach($manager->id);
         }
 
         return redirect()->route('admin.managers.index');
@@ -134,12 +144,35 @@ class ManagerController extends Controller
         abort_if(Gate::denies('manager_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $managers = User::find($manager->manager_id);
 
-        $users =
-            User::join('role_user', 'users.id', '=', 'role_user.user_id')->where('role_user.role_id', 3)->get()->pluck('name', 'id');
-//        $users = User::join('role_user', 'users.id', '=', 'role_user.user_id')
-//            ->whereNotIn('users.id',function($query) use ($manager){
-//                $query->select('manager_user.user_id')->from('manager_user')->where('manager_id', '!=', $manager->id);
-//            })->where('role_user.role_id', 3)->get()->pluck('name', 'id');
+        $userauth = auth()->user();
+            $rolesauth = $userauth->roles->pluck('id')->toArray();
+
+            if(in_array(1, $rolesauth, false)){
+
+                $userId= [];
+
+                $distributor = Distributor::all();
+                foreach ($distributor as $key => $item) {
+                    $userId = [...$userId, ...$item->users->pluck('id')];
+                }
+
+                $users = User::join('role_user', 'users.id', '=', 'role_user.user_id')
+                        ->where('role_user.role_id', 3)
+                        ->whereNotIn('id',$userId)
+                        ->get()->pluck('name', 'id');
+
+            }elseif (in_array(4, $rolesauth, false)) {
+
+              $distributor = Distributor::where('distributor_id',$userauth->id)->first();
+              $usersId = $distributor->users->pluck('id');
+
+              $users = User::join('role_user', 'users.id', '=', 'role_user.user_id')
+              ->where('role_user.role_id', 3)
+              ->whereIn('id',$usersId)
+              ->get()
+              ->pluck('name', 'id');
+            }
+
         $manager->load('manager', 'users');
         return view('admin.managers.edit', compact('managers', 'users', 'manager'));
     }
@@ -181,8 +214,16 @@ class ManagerController extends Controller
         $rolesauth = $userauth->roles->pluck('id')->toArray();
 
         if(in_array(1, $rolesauth, false)){
+            $managersid= [];
 
-            return Manager::with([ 'manager', 'users' ])->select(sprintf('%s.*', (new Manager)->table));
+            $distributor = Distributor::all();
+            foreach ($distributor as $key => $item) {
+                $managersid = [...$managersid, ...$item->managers->pluck('id')];
+            }
+
+            return Manager::with([ 'manager', 'users' ])
+                    ->whereNotIn('id',$managersid)
+                    ->select(sprintf('%s.*', (new Manager)->table));
 
         }elseif (in_array(4, $rolesauth, false)) {
 
